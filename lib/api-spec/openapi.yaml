@@ -1,15 +1,20 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Polyglot Auto-Detecting Compiler API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: detection
+    description: Language detection operations
+  - name: compilation
+    description: Compilation and execution operations
+  - name: submissions
+    description: Submission history operations
 paths:
   /healthz:
     get:
@@ -24,6 +29,128 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /detect:
+    post:
+      operationId: detectLanguage
+      tags: [detection]
+      summary: Detect programming language
+      description: Analyzes source code and returns the detected language with confidence scores
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DetectRequest"
+      responses:
+        "200":
+          description: Detection result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetectResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /compile:
+    post:
+      operationId: compileCode
+      tags: [compilation]
+      summary: Compile or run source code
+      description: Detects language and compiles/runs the code, returning output
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompileRequest"
+      responses:
+        "200":
+          description: Compilation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompileResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /submissions:
+    get:
+      operationId: listSubmissions
+      tags: [submissions]
+      summary: List submission history
+      description: Returns paginated list of past submissions
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: number
+          description: Page number (1-based)
+        - name: limit
+          in: query
+          schema:
+            type: number
+          description: Items per page
+        - name: language
+          in: query
+          schema:
+            type: string
+          description: Filter by detected language
+      responses:
+        "200":
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionListResponse"
+
+  /submissions/{id}:
+    get:
+      operationId: getSubmission
+      tags: [submissions]
+      summary: Get a single submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Submission detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /toolchains:
+    get:
+      operationId: listToolchains
+      tags: [detection]
+      summary: List available toolchains
+      description: Returns languages and their availability on the host system
+      responses:
+        "200":
+          description: Toolchain availability list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolchainListResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +161,226 @@ components:
       required:
         - status
 
+    DetectRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Source code to analyze
+        filename:
+          type: string
+          description: Optional filename hint (e.g. "main.py")
+      required:
+        - code
+
+    LanguageCandidate:
+      type: object
+      properties:
+        language:
+          type: string
+        confidence:
+          type: number
+        signals:
+          type: array
+          items:
+            type: string
+      required:
+        - language
+        - confidence
+        - signals
+
+    DetectResponse:
+      type: object
+      properties:
+        detected:
+          type: string
+          description: Primary detected language
+        confidence:
+          type: number
+          description: Confidence score (0-1)
+        confidenceLevel:
+          type: string
+          enum: [high, medium, low]
+          description: "high >= 0.92, medium 0.70-0.91, low < 0.70"
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/LanguageCandidate"
+        signals:
+          type: array
+          items:
+            type: string
+          description: Detection signals used
+        detectionMs:
+          type: number
+          description: Time taken for detection in milliseconds
+      required:
+        - detected
+        - confidence
+        - confidenceLevel
+        - candidates
+        - signals
+        - detectionMs
+
+    CompileRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Source code to compile/run
+        filename:
+          type: string
+          description: Optional filename hint
+        language:
+          type: string
+          description: Override language detection
+        args:
+          type: array
+          items:
+            type: string
+          description: Additional arguments to pass to the compiler
+      required:
+        - code
+
+    CompileResponse:
+      type: object
+      properties:
+        submissionId:
+          type: number
+        detected:
+          type: string
+        confidence:
+          type: number
+        confidenceLevel:
+          type: string
+          enum: [high, medium, low]
+        stdout:
+          type: string
+        stderr:
+          type: string
+        exitCode:
+          type: number
+        success:
+          type: boolean
+        compilationMs:
+          type: number
+        toolchainAvailable:
+          type: boolean
+        installHint:
+          type: string
+          description: Install instructions if toolchain not available
+      required:
+        - submissionId
+        - detected
+        - confidence
+        - confidenceLevel
+        - stdout
+        - stderr
+        - exitCode
+        - success
+        - compilationMs
+        - toolchainAvailable
+
+    Submission:
+      type: object
+      properties:
+        id:
+          type: number
+        code:
+          type: string
+        filename:
+          type: string
+          nullable: true
+        detectedLanguage:
+          type: string
+        confidence:
+          type: number
+        confidenceLevel:
+          type: string
+        stdout:
+          type: string
+        stderr:
+          type: string
+        exitCode:
+          type: number
+        success:
+          type: boolean
+        compilationMs:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - detectedLanguage
+        - confidence
+        - confidenceLevel
+        - stdout
+        - stderr
+        - exitCode
+        - success
+        - compilationMs
+        - createdAt
+
+    SubmissionListResponse:
+      type: object
+      properties:
+        submissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Submission"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+        totalPages:
+          type: number
+      required:
+        - submissions
+        - total
+        - page
+        - limit
+        - totalPages
+
+    ToolchainEntry:
+      type: object
+      properties:
+        language:
+          type: string
+        available:
+          type: boolean
+        command:
+          type: string
+        version:
+          type: string
+          nullable: true
+        installHint:
+          type: string
+      required:
+        - language
+        - available
+        - command
+        - installHint
+
+    ToolchainListResponse:
+      type: object
+      properties:
+        toolchains:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolchainEntry"
+      required:
+        - toolchains
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+      required:
+        - error

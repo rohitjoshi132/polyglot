@@ -1,0 +1,10 @@
+packages:
+  "framer-motion": "For page transitions and fluid micro-interactions"
+  "date-fns": "For elegant date formatting in history views"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to merge tailwind classes safely"
+  "lucide-react": "Beautiful consistent icons"
+
+notes:
+  - Assumes @workspace/api-client-react provides all TanStack Query hooks
+  - Relies on Shadcn UI components existing in src/components/ui/

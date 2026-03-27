@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Polyglot"
+version = "1.0.0"
+id = "artifacts/polyglot"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22706
+
+[services.development]
+run = "pnpm --filter @workspace/polyglot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/polyglot", "run", "build" ]
+publicDir = "artifacts/polyglot/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22706"
+BASE_PATH = "/"
