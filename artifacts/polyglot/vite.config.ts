@@ -2,12 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { existsSync } from "fs";
 
 const port = Number(process.env.PORT) || 5173;
 const basePath = process.env.BASE_PATH || "/";
 const apiPort = Number(process.env.API_PORT) || 8080;
 
 const isReplit = process.env.REPL_ID !== undefined;
+
+const attachedAssetsPath = path.resolve(import.meta.dirname, "..", "..", "attached_assets");
+const assetsAlias = existsSync(attachedAssetsPath)
+  ? attachedAssetsPath
+  : path.resolve(import.meta.dirname, "src", "assets");
 
 export default defineConfig({
   base: basePath,
@@ -33,7 +39,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
-      "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      "@assets": assetsAlias,
     },
     dedupe: ["react", "react-dom"],
   },
@@ -47,8 +53,7 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {
-      strict: true,
-      deny: ["**/.*"],
+      strict: false,
     },
     proxy: {
       "/api": {
