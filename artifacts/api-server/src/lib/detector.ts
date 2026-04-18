@@ -214,8 +214,8 @@ const LANGUAGE_RULES: LanguageRule[] = [
 ];
 
 function getConfidenceLevel(confidence: number): "high" | "medium" | "low" {
-  if (confidence >= 0.92) return "high";
-  if (confidence >= 0.70) return "medium";
+  if (confidence >= 0.65) return "high";
+  if (confidence >= 0.40) return "medium";
   return "low";
 }
 
@@ -257,7 +257,10 @@ function scoreLanguage(code: string, rule: LanguageRule, shebang: string | null,
     }
   }
   if (keywordHits > 0) {
-    score += Math.min(keywordHits / rule.keywords.length, 1) * 0.3;
+    // Keyword contribution: up to 0.45 (was 0.30)
+    // Partial hits still score well: sqrt smoothing rewards early hits
+    const keywordRatio = keywordHits / rule.keywords.length;
+    score += Math.sqrt(keywordRatio) * 0.45;
   }
 
   let patternHits = 0;
@@ -267,7 +270,9 @@ function scoreLanguage(code: string, rule: LanguageRule, shebang: string | null,
     }
   }
   if (patternHits > 0) {
-    score += Math.min(patternHits / rule.patterns.length, 1) * 0.25;
+    // Pattern contribution: up to 0.40 (was 0.25)
+    const patternRatio = patternHits / rule.patterns.length;
+    score += Math.sqrt(patternRatio) * 0.40;
     signals.push(`syntax patterns matched: ${patternHits}/${rule.patterns.length}`);
   }
 
