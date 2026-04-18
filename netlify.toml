@@ -1,6 +1,6 @@
 [build]
   base = "."
-  command = "npm install -g pnpm && pnpm install --frozen-lockfile && pnpm --filter @workspace/polyglot run build"
+  command = "corepack enable pnpm && pnpm install --frozen-lockfile && pnpm --filter @workspace/polyglot run build"
   publish = "artifacts/polyglot/dist/public"
 
 [build.environment]
