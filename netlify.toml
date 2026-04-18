@@ -1,0 +1,10 @@
+[build]
+  base = "artifacts/polyglot"
+  command = "pnpm run build"
+  publish = "dist/public"
+
+# SPA Fallback: Redirect all unrecognized traffic to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
