@@ -214,8 +214,8 @@ const LANGUAGE_RULES: LanguageRule[] = [
 ];
 
 function getConfidenceLevel(confidence: number): "high" | "medium" | "low" {
-  if (confidence >= 0.65) return "high";
-  if (confidence >= 0.40) return "medium";
+  if (confidence >= 0.50) return "high";
+  if (confidence >= 0.30) return "medium";
   return "low";
 }
 
@@ -231,24 +231,42 @@ function getFileExtension(filename?: string): string | null {
   return match ? match[1].toLowerCase() : null;
 }
 
+function analyzeStructure(code: string): { hasSemicolons: boolean; hasCurlyBraces: boolean; hasIndentBlocks: boolean; lineCount: number; hasHashComments: boolean; hasSlashComments: boolean } {
+  const lines = code.split("\n");
+  const semiLines = lines.filter(l => l.trimEnd().endsWith(";")).length;
+  const curlyCount = (code.match(/[{}]/g) || []).length;
+  const indentBlocks = lines.filter(l => /^\s{2,}\S/.test(l) && !l.trim().startsWith("}")).length;
+  return {
+    hasSemicolons: semiLines > lines.length * 0.2,
+    hasCurlyBraces: curlyCount >= 2,
+    hasIndentBlocks: indentBlocks > lines.length * 0.3,
+    lineCount: lines.length,
+    hasHashComments: /^\s*#[^!]/m.test(code),
+    hasSlashComments: /\/\//.test(code) || /\/\*/.test(code),
+  };
+}
+
 function scoreLanguage(code: string, rule: LanguageRule, shebang: string | null, extension: string | null): { score: number; signals: string[] } {
   let score = 0;
   const signals: string[] = [];
-  const sample = code.slice(0, 4096);
+  const sample = code.slice(0, 8192);
 
+  // Extension match — strong signal
   if (extension && rule.extensions.includes(extension)) {
-    score += 0.6;
+    score += 0.65;
     signals.push(`file extension: ${extension}`);
   }
 
+  // Shebang match — strong signal
   if (shebang) {
     const shebangBase = shebang.split("/").pop() || shebang;
     if (rule.shebangs.some(s => shebangBase.includes(s))) {
-      score += 0.5;
+      score += 0.55;
       signals.push(`shebang: #!${shebang}`);
     }
   }
 
+  // Keyword matching — up to 0.55
   let keywordHits = 0;
   for (const keyword of rule.keywords) {
     if (sample.includes(keyword)) {
@@ -257,12 +275,12 @@ function scoreLanguage(code: string, rule: LanguageRule, shebang: string | null,
     }
   }
   if (keywordHits > 0) {
-    // Keyword contribution: up to 0.45 (was 0.30)
-    // Partial hits still score well: sqrt smoothing rewards early hits
     const keywordRatio = keywordHits / rule.keywords.length;
-    score += Math.sqrt(keywordRatio) * 0.45;
+    // Use a steeper curve: pow(ratio, 0.6) rewards even 2-3 keyword hits generously
+    score += Math.pow(keywordRatio, 0.6) * 0.55;
   }
 
+  // Pattern matching — up to 0.50
   let patternHits = 0;
   for (const pattern of rule.patterns) {
     if (pattern.test(sample)) {
@@ -270,13 +288,43 @@ function scoreLanguage(code: string, rule: LanguageRule, shebang: string | null,
     }
   }
   if (patternHits > 0) {
-    // Pattern contribution: up to 0.40 (was 0.25)
     const patternRatio = patternHits / rule.patterns.length;
-    score += Math.sqrt(patternRatio) * 0.40;
+    score += Math.pow(patternRatio, 0.6) * 0.50;
     signals.push(`syntax patterns matched: ${patternHits}/${rule.patterns.length}`);
   }
 
-  return { score: Math.min(score * rule.weight, 1.0), signals: signals.slice(0, 5) };
+  // Multi-signal alignment bonus: when both keywords AND patterns fire, it's very likely correct
+  if (keywordHits >= 2 && patternHits >= 2) {
+    score += 0.15;
+    signals.push("multi-signal alignment");
+  }
+
+  // Structural analysis bonus
+  const structure = analyzeStructure(code);
+  const lang = rule.language;
+
+  // Python: indentation-based, hash comments, no semicolons/braces
+  if (lang === "Python" && structure.hasIndentBlocks && structure.hasHashComments && !structure.hasSemicolons) {
+    score += 0.10;
+    signals.push("structural: indent-based blocks");
+  }
+  // C-family / Java / Go / Rust: semicolons + curly braces + slash comments
+  if (["C", "C++", "Java", "JavaScript", "TypeScript", "Go", "Rust", "Kotlin", "Swift"].includes(lang)) {
+    if (structure.hasCurlyBraces && structure.hasSlashComments) {
+      score += 0.05;
+    }
+  }
+  // Ruby: no semicolons, no curly braces typically
+  if (lang === "Ruby" && !structure.hasSemicolons && !structure.hasCurlyBraces) {
+    score += 0.05;
+  }
+
+  // Longer code = more reliable detection (small bonus for non-trivial snippets)
+  if (structure.lineCount >= 5) {
+    score += 0.05;
+  }
+
+  return { score: Math.min(score * rule.weight, 1.0), signals: signals.slice(0, 8) };
 }
 
 export function detectLanguage(code: string, filename?: string): DetectionResult {
