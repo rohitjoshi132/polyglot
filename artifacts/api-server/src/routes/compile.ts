@@ -24,21 +24,8 @@ router.post("/compile", async (req, res) => {
 
   const compileResult = await compileAndRun(code, language, args || []);
 
-  const [inserted] = await db
-    .insert(submissionsTable)
-    .values({
-      code,
-      filename: filename || null,
-      detectedLanguage: language,
-      confidence: detection.confidence,
-      confidenceLevel: detection.confidenceLevel,
-      stdout: compileResult.stdout,
-      stderr: compileResult.stderr,
-      exitCode: compileResult.exitCode,
-      success: compileResult.success,
-      compilationMs: compileResult.compilationMs,
-    })
-    .returning();
+  // Database logging bypassed for local testing (Option A)
+  const inserted = { id: Date.now() };
 
   res.json({
     submissionId: inserted.id,

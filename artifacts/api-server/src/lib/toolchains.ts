@@ -19,7 +19,7 @@ interface ToolchainDef {
 export const TOOLCHAIN_DEFS: ToolchainDef[] = [
   {
     language: "Python",
-    command: "python3",
+    command: process.platform === "win32" ? "python" : "python3",
     versionFlag: "--version",
     runFlag: "",
     installHint: "Install Python from https://python.org or via your package manager (apt install python3, brew install python)",
@@ -105,7 +105,8 @@ export const TOOLCHAIN_DEFS: ToolchainDef[] = [
 
 function checkCommand(cmd: string): boolean {
   try {
-    execSync(`which ${cmd}`, { stdio: "ignore" });
+    const checkCmd = process.platform === "win32" ? "where" : "which";
+    execSync(`${checkCmd} ${cmd}`, { stdio: "ignore" });
     return true;
   } catch {
     return false;

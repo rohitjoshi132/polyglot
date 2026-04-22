@@ -51,7 +51,8 @@ export async function compileAndRun(code: string, language: string, extraArgs: s
   }
 
   try {
-    execSync(`which ${toolchain.command}`, { stdio: "ignore" });
+    const checkCmd = process.platform === "win32" ? "where" : "which";
+    execSync(`${checkCmd} ${toolchain.command}`, { stdio: "ignore" });
   } catch {
     return {
       stdout: "",
@@ -78,7 +79,8 @@ export async function compileAndRun(code: string, language: string, extraArgs: s
     if (language === "Python") {
       const file = join(workDir, `main${ext}`);
       writeFileSync(file, code, "utf-8");
-      cmd = `python3 ${file} ${extraArgs.join(" ")}`;
+      const pyCmd = process.platform === "win32" ? "python" : "python3";
+      cmd = `${pyCmd} ${file} ${extraArgs.join(" ")}`;
     } else if (language === "JavaScript") {
       const file = join(workDir, `main${ext}`);
       writeFileSync(file, code, "utf-8");
