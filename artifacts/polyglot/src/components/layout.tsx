@@ -1,19 +1,23 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Terminal, History, Wrench, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Terminal, History, Wrench, Menu, X, User, LogIn, FolderOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { AuthModal } from "./auth-modal";
 
 const navItems = [
   { href: "/", label: "Editor", icon: Terminal },
   { href: "/history", label: "History", icon: History },
   { href: "/toolchains", label: "Toolchains", icon: Wrench },
+  { href: "/profile", label: "My Projects", icon: FolderOpen },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { user, loading } = useAuth();
 
   return (
     <div className="min-h-screen w-full flex bg-background">
@@ -54,8 +58,56 @@ export function Layout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {/* User Section */}
+        <div className="p-4 border-t border-border/50">
+          {loading ? (
+            <div className="rounded-xl bg-secondary/50 p-4 border border-white/5 animate-pulse">
+              <div className="h-10 bg-white/5 rounded-lg" />
+            </div>
+          ) : user ? (
+            <Link href="/profile" className="block">
+              <div className="rounded-xl bg-secondary/50 p-3 border border-white/5 flex items-center gap-3 hover:bg-secondary/80 hover:border-primary/20 transition-all cursor-pointer group">
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || "User"}
+                    className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-emerald-600/20 border border-primary/20 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">
+                      {(user.displayName || user.email || "?").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                    {user.displayName || "User"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="w-full rounded-xl bg-gradient-to-r from-primary/10 to-emerald-600/5 p-3 border border-primary/20 flex items-center gap-3 hover:from-primary/20 hover:to-emerald-600/10 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <LogIn className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                  Sign In
+                </p>
+                <p className="text-xs text-muted-foreground">Save your projects</p>
+              </div>
+            </button>
+          )}
+        </div>
         
-        <div className="p-6 border-t border-border/50">
+        <div className="px-4 pb-4">
           <div className="rounded-xl bg-secondary/50 p-4 border border-white/5">
             <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">System Status</p>
             <div className="flex items-center text-sm text-primary">
@@ -75,12 +127,33 @@ export function Layout({ children }: { children: ReactNode }) {
           <Terminal className="w-5 h-5 text-primary mr-2" />
           <span className="font-bold text-lg">Polyglot</span>
         </div>
-        <button 
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg bg-secondary/50 text-foreground hover:text-primary transition-colors"
-        >
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {!loading && !user && (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+            >
+              <LogIn className="w-5 h-5" />
+            </button>
+          )}
+          {!loading && user && (
+            <Link href="/profile">
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="" className="w-8 h-8 rounded-lg object-cover border border-white/10" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/20 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+              )}
+            </Link>
+          )}
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg bg-secondary/50 text-foreground hover:text-primary transition-colors"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Dropdown */}
@@ -121,6 +194,9 @@ export function Layout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </div>
   );
 }

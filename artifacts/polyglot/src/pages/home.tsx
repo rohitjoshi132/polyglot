@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Play, 
@@ -8,7 +8,8 @@ import {
   Clock, 
   CheckCircle2, 
   AlertTriangle,
-  Info
+  Info,
+  Save,
 } from "lucide-react";
 import { useDetectLanguage, useCompileCode } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,13 +17,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { AuthModal } from "@/components/auth-modal";
+import { SaveProjectDialog } from "@/components/save-project-dialog";
 
 export default function Home() {
   const [code, setCode] = useState("");
   const [filename, setFilename] = useState("");
   const [languageOverride, setLanguageOverride] = useState("");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check for loaded project from profile page
+  useEffect(() => {
+    const loadProject = sessionStorage.getItem("loadProject");
+    if (loadProject) {
+      try {
+        const project = JSON.parse(loadProject);
+        setCode(project.code || "");
+        setFilename(project.filename || "");
+        setLanguageOverride(project.language || "");
+        toast({
+          title: "Project Loaded",
+          description: `"${project.title}" loaded into editor.`,
+        });
+      } catch {
+        // Invalid data, ignore
+      }
+      sessionStorage.removeItem("loadProject");
+    }
+  }, [toast]);
 
   const { mutate: detect, isPending: isDetecting, data: detectResult } = useDetectLanguage({
     mutation: {
@@ -79,6 +106,43 @@ export default function Home() {
       filename: filename || undefined, 
       language: languageOverride || undefined 
     }});
+  };
+
+  const handleSaveClick = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    setSaveDialogOpen(true);
+  };
+
+  const handleSaveProject = async (title: string) => {
+    if (!user) return;
+    const token = await user.getIdToken();
+    const apiBase = import.meta.env.VITE_API_URL || "";
+    const res = await fetch(`${apiBase}/api/projects`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title,
+        code,
+        language: compileResult?.detected || detectResult?.detected || languageOverride || null,
+        filename: filename || null,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to save");
+    }
+
+    toast({
+      title: "Project Saved",
+      description: `"${title}" saved successfully.`,
+    });
   };
 
   // Determine which data to show in the right panel
@@ -158,6 +222,15 @@ export default function Home() {
               </div>
               
               <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveClick}
+                  disabled={!code.trim()}
+                  className="flex items-center px-4 py-2 rounded-lg font-medium text-sm border border-border bg-card hover:bg-secondary hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={user ? "Save project" : "Sign in to save"}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
+                </button>
                 <button
                   onClick={handleDetect}
                   disabled={isDetecting || isCompiling}
@@ -340,6 +413,17 @@ export default function Home() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Auth Modal (triggered when saving without being signed in) */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
+      {/* Save Project Dialog */}
+      <SaveProjectDialog
+        isOpen={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
+        onSave={handleSaveProject}
+        defaultTitle={filename || ""}
+      />
     </div>
   );
 }
