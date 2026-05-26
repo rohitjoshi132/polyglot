@@ -63,8 +63,8 @@ export default function Profile() {
     if (!user) return;
     setLoading(true);
     try {
-      const token = await user.getIdToken();
-      const apiBase = import.meta.env.VITE_API_URL || "";
+      const token = await user.getIdToken(true);
+      const apiBase = import.meta.env.VITE_API_URL || "https://polyglot-api-okgo.onrender.com";
       const res = await fetch(`${apiBase}/api/projects?page=${page}&limit=12`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -96,8 +96,8 @@ export default function Profile() {
     setDeletingId(id);
     setDeleteConfirm(null);
     try {
-      const token = await user.getIdToken();
-      const apiBase = import.meta.env.VITE_API_URL || "";
+      const token = await user.getIdToken(true);
+      const apiBase = import.meta.env.VITE_API_URL || "https://polyglot-api-okgo.onrender.com";
       const res = await fetch(`${apiBase}/api/projects/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -157,7 +157,7 @@ export default function Profile() {
     <div className="flex flex-col h-full gap-6 animate-fade-up">
 
       {/* ── Profile Card ── */}
-      <div className="glass-panel rounded-2xl border border-border/60 p-6 shadow-xl">
+      <div className="glass-panel rounded-2xl border border-border p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           {/* Avatar */}
           <div className="relative shrink-0">
@@ -283,12 +283,12 @@ export default function Profile() {
                   className="group glass-panel rounded-2xl border border-border/50 overflow-hidden cursor-pointer hover:border-primary/30 hover:shadow-lg hover:shadow-primary/8 transition-all duration-300"
                 >
                   {/* Code Preview */}
-                  <div className="h-[88px] bg-[#060610] px-4 py-3 overflow-hidden border-b border-border/40 relative">
-                    <pre className="font-mono text-[11px] text-zinc-700 leading-relaxed whitespace-pre-wrap select-none pointer-events-none">
+                  <div className="h-[88px] bg-slate-900 px-4 py-3 overflow-hidden border-b border-border relative">
+                    <pre className="font-mono text-[11px] text-slate-500 leading-relaxed whitespace-pre-wrap select-none pointer-events-none">
                       {project.code.substring(0, 180)}
                     </pre>
                     {/* Fade overlay */}
-                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-[#060610] to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-900 to-transparent" />
                   </div>
 
                   {/* Info */}
