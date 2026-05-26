@@ -252,7 +252,7 @@ export default function Home() {
         {/* ── Editor Panel ── */}
         <div className="flex-1 flex flex-col glow-border rounded-2xl glass-panel overflow-hidden border border-border/60 focus-within:border-primary/40 focus-within:shadow-[0_0_30px_-8px_hsl(152_72%_47%/0.2)] transition-all duration-300">
           {/* Editor Top Bar */}
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-secondary/60 border-b border-border">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border-b border-gray-200">
             {/* macOS-style dots */}
             <div className="flex gap-1.5 shrink-0">
               <div className="w-3 h-3 rounded-full bg-rose-500/70 hover:bg-rose-500 transition-colors cursor-default" title="Close" />
@@ -262,18 +262,18 @@ export default function Home() {
 
             {/* Filename input */}
             <div className="flex-1 flex items-center relative">
-              <FileCode className="absolute left-2.5 w-3.5 h-3.5 text-muted-foreground/60 pointer-events-none" />
+              <FileCode className="absolute left-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 value={filename}
                 onChange={(e) => setFilename(e.target.value)}
                 placeholder="filename.ext  (optional)"
-                className="w-full bg-black/30 border border-white/5 rounded-lg py-1.5 pl-8 pr-3 text-xs font-mono text-emerald-400/80 placeholder:text-zinc-700 focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
+                className="w-full bg-white border border-gray-200 rounded-lg py-1.5 pl-8 pr-3 text-xs font-mono text-slate-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
               />
             </div>
 
             {/* Line count */}
-            <span className="text-xs font-mono text-muted-foreground/50 shrink-0">
+            <span className="text-xs font-mono text-gray-400 shrink-0">
               {lineCount} {lineCount === 1 ? "line" : "lines"}
             </span>
 
@@ -282,7 +282,7 @@ export default function Home() {
               <button
                 onClick={handleClear}
                 title="Clear editor"
-                className="p-1.5 rounded-md text-muted-foreground/50 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -302,12 +302,12 @@ export default function Home() {
           </div>
 
           {/* Editor Footer Actions */}
-          <div className="px-4 py-3 bg-secondary/50 border-t border-border flex flex-wrap items-center justify-between gap-3">
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
             {/* Language override dropdown */}
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setLangDropdownOpen((v) => !v)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-border text-xs font-mono text-muted-foreground hover:border-primary/40 hover:text-primary transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-mono text-slate-600 hover:border-primary/40 hover:text-primary transition-all"
               >
                 <Code2 className="w-3.5 h-3.5" />
                 {languageOverride || "Auto-detect"}
@@ -320,7 +320,7 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.97 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute bottom-full mb-1.5 left-0 z-50 w-48 bg-white rounded-xl border border-border shadow-xl overflow-hidden"
+                    className="absolute bottom-full mb-1.5 left-0 z-50 w-48 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden"
                   >
                     {LANGUAGE_OPTIONS.map((lang) => (
                       <button
@@ -331,10 +331,10 @@ export default function Home() {
                           if (lang !== "Auto-detect" && SAMPLE_SNIPPETS[lang] && !code) handleLoadSample(lang);
                         }}
                         className={cn(
-                          "w-full text-left px-3 py-2 text-xs font-mono transition-colors hover:bg-primary/10 hover:text-primary",
+                          "w-full text-left px-3 py-2 text-xs font-mono transition-colors hover:bg-primary/8 hover:text-primary",
                           (languageOverride === lang || (lang === "Auto-detect" && !languageOverride))
-                            ? "text-primary bg-primary/10"
-                            : "text-muted-foreground"
+                            ? "text-primary bg-primary/8 font-semibold"
+                            : "text-slate-600"
                         )}
                       >
                         {lang}
