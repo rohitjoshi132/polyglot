@@ -2,30 +2,24 @@ import { initializeApp, cert, getApps, type ServiceAccount } from "firebase-admi
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 import type { Request, Response, NextFunction } from "express";
 
-// ── Firebase Admin Initialization ──────────────────────────────────────────
-// Firebase Admin can verify ID tokens using Google's public keys.
-// A full service account is NOT required for token verification —
-// only the project ID is needed. The private key is only required for
-// creating custom tokens or accessing other Firebase services.
+// ── Firebase Admin Initialization ───────────────────────────────────────────
+// verifyIdToken() works without a service account — Firebase Admin downloads
+// Google's public keys at runtime to validate JWT signatures.
+// The private key is only needed for createCustomToken() or checkRevoked.
 if (!getApps().length) {
-  const serviceAccountJson = process.env["FIREBASE_SERVICE_ACCOUNT_JSON"];
-
-  if (serviceAccountJson) {
+  const raw = process.env["FIREBASE_SERVICE_ACCOUNT_JSON"];
+  if (raw) {
     try {
-      const sa = JSON.parse(serviceAccountJson) as ServiceAccount;
-      initializeApp({ credential: cert(sa) });
-      console.log("✅ Firebase Admin: initialized with service account");
-    } catch (err) {
-      console.warn("⚠️  Firebase Admin: failed to parse service account JSON, falling back to project ID");
-      console.warn(err);
+      initializeApp({ credential: cert(JSON.parse(raw) as ServiceAccount) });
+      console.log("Firebase Admin: initialized with service account");
+    } catch {
+      console.warn("Firebase Admin: bad service account JSON, falling back to projectId");
       initializeApp({ projectId: "polyglot-95500" });
     }
   } else {
-    // No service account — initialise with project ID only.
-    // verifyIdToken() still works because Firebase downloads Google's
-    // public keys at runtime to validate JWT signatures.
-    console.log("ℹ️  Firebase Admin: no service account set, initializing with project ID (token verification still works)");
+    // No service account on Render — project ID is enough for verifyIdToken
     initializeApp({ projectId: "polyglot-95500" });
+    console.log("Firebase Admin: initialized with projectId (no service account)");
   }
 }
 
@@ -39,10 +33,6 @@ declare global {
 }
 
 // ── requireAuth ──────────────────────────────────────────────────────────────
-/**
- * Middleware that requires a valid Firebase ID token.
- * Rejects unauthenticated / invalid requests with 401.
- */
 export async function requireAuth(
   req: Request,
   res: Response,
@@ -62,34 +52,25 @@ export async function requireAuth(
   }
 
   try {
-    const decoded = await getAuth().verifyIdToken(token, /* checkRevoked */ true);
+    // NOTE: do NOT pass checkRevoked:true — that requires service account creds
+    const decoded = await getAuth().verifyIdToken(token);
     req.firebaseUser = decoded;
     next();
   } catch (err: unknown) {
-    // Surface the real Firebase error code for easier debugging
     const code = (err as { code?: string })?.code ?? "unknown";
-    console.error("Token verification failed:", code, (err as Error)?.message);
-
-    if (code === "auth/id-token-expired") {
-      res.status(401).json({ error: "Token expired — please sign in again" });
-    } else {
-      res.status(401).json({ error: "Invalid or expired token", code });
-    }
+    const msg  = (err as Error)?.message ?? "";
+    console.error(`[auth] verifyIdToken failed — code: ${code} | msg: ${msg}`);
+    res.status(401).json({ error: "Invalid or expired token", code });
   }
 }
 
 // ── optionalAuth ─────────────────────────────────────────────────────────────
-/**
- * Middleware that optionally attaches user info if a valid token is present.
- * Does NOT reject unauthenticated requests.
- */
 export async function optionalAuth(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   const authHeader = req.headers.authorization;
-
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     if (token) {
@@ -97,10 +78,9 @@ export async function optionalAuth(
         const decoded = await getAuth().verifyIdToken(token);
         req.firebaseUser = decoded;
       } catch {
-        // Invalid token — proceed without user
+        // invalid token — proceed without user
       }
     }
   }
-
   next();
 }
