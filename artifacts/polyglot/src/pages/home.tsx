@@ -289,14 +289,14 @@ export default function Home() {
             )}
           </div>
 
-          {/* Textarea */}
-          <div className="relative flex-1 terminal-bg">
+          {/* Textarea — light background */}
+          <div className="relative flex-1 bg-white">
             <textarea
               ref={textareaRef}
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder={"// Paste or type your source code here...\n// Press Ctrl+Enter to run, Ctrl+Shift+D to detect language"}
-              className="absolute inset-0 w-full h-full p-5 bg-transparent border-none outline-none font-mono text-[13.5px] leading-relaxed text-emerald-300 placeholder:text-zinc-700 resize-none"
+              className="absolute inset-0 w-full h-full p-5 bg-transparent border-none outline-none font-mono text-[13.5px] leading-relaxed text-slate-800 placeholder:text-slate-400 resize-none"
               spellCheck={false}
             />
           </div>
