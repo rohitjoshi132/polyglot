@@ -267,7 +267,7 @@ export default function Home() {
                 type="text"
                 value={filename}
                 onChange={(e) => setFilename(e.target.value)}
-                placeholder="filename.ext  (optional)"
+                placeholder="filename.ext"
                 className="w-full bg-white border border-gray-200 rounded-lg py-1.5 pl-8 pr-3 text-xs font-mono text-slate-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all"
               />
             </div>
