@@ -501,7 +501,31 @@ export default function Home() {
       Rust:       [/std::io::stdin/g, /io::stdin\(\)/g, /\.read_line\s*\(/g],
     };
 
-    const activeLang = lang || "Python"; // fallback
+    // Use provided lang, or fall back to already-detected language; never force Python
+    const activeLang = lang || "";
+    if (!activeLang) {
+      // No language known yet — scan all languages and pick the first match
+      for (const [l, lPatterns] of Object.entries(patterns)) {
+        const hasMatch = lPatterns.some((p) => new RegExp(p.source).test(src));
+        if (hasMatch) {
+          if (l === "Python") {
+            for (const line of lines) {
+              const m = line.match(/\binput\s*\((["'`]?)([^"'`)]*)["'`]?\)/);
+              if (m && m[2].trim()) prompts.push(m[2].trim());
+              else if (line.match(/\binput\s*\(/)) prompts.push("");
+            }
+          } else {
+            let count = 0;
+            for (const p of lPatterns) {
+              count += [...src.matchAll(new RegExp(p.source, "g"))].length;
+            }
+            for (let i = 0; i < Math.min(count, 10); i++) prompts.push("");
+          }
+          return prompts.length > 0 ? prompts : [""];
+        }
+      }
+      return [];
+    }
     const langPatterns = patterns[activeLang] ?? [];
 
     // Collect natural-language prompts from input() calls (Python)
@@ -528,7 +552,8 @@ export default function Home() {
 
   const handleCompile = useCallback(() => {
     if (!code.trim()) { toast({ title: "No code", description: "Enter some code first.", variant: "destructive" }); return; }
-    const lang = languageOverride || "";
+    // Use manual override → previously auto-detected language → empty (detectsStdin will scan all)
+    const lang = languageOverride || detectResult?.detected || "";
     const detectedPrompts = detectsStdin(code, lang);
     if (detectedPrompts.length > 0) {
       setStdinPrompts(detectedPrompts);
@@ -537,7 +562,7 @@ export default function Home() {
     } else {
       compile({ data: { code, filename: filename || undefined, language: languageOverride || undefined, stdin: undefined } });
     }
-  }, [code, filename, languageOverride, detectsStdin, compile, toast]);
+  }, [code, filename, languageOverride, detectResult, detectsStdin, compile, toast]);
 
   const confirmRunWithStdin = useCallback(() => {
     setStdinModalOpen(false);
@@ -1024,7 +1049,23 @@ export default function Home() {
                           </div>
                         )}
                         {!compileResult!.stdout && !compileResult!.stderr && (
-                          <p className="text-zinc-700 italic text-sm">No output produced.</p>
+                          <div className="space-y-3">
+                            <p className="text-zinc-700 italic text-sm">No output produced.</p>
+                            {compileResult!.exitCode !== 0 && (
+                              <div className="p-3 rounded-xl bg-amber-500/8 border border-amber-500/20">
+                                <p className="text-amber-400 text-xs leading-relaxed mb-2">
+                                  💡 The program exited with code <strong>{compileResult!.exitCode}</strong> and produced no output.
+                                  This often happens when a program reads from stdin but receives no input.
+                                </p>
+                                <button
+                                  onClick={() => { setStdinPrompts([""]); setStdin(""); setStdinModalOpen(true); }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/25 transition-all"
+                                >
+                                  <Terminal className="w-3.5 h-3.5" /> Retry with Input
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                         {!compileResult!.toolchainAvailable && (
                           <div className="mt-5 p-4 rounded-xl bg-amber-500/8 border border-amber-500/20 text-amber-400">
