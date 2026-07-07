@@ -11,9 +11,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { AuthProvider } from "./contexts/auth-context";
+import { ThemeProvider } from "./contexts/theme-context";
 import { Layout } from "./components/layout";
 import Home from "./pages/home";
-import History from "./pages/history";
+
 import Toolchains from "./pages/toolchains";
 import Profile from "./pages/profile";
 import NotFound from "./pages/not-found";
@@ -32,7 +33,7 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/history" component={History} />
+
         <Route path="/toolchains" component={Toolchains} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
@@ -43,16 +44,18 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

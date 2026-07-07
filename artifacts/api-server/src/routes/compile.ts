@@ -7,11 +7,12 @@ import { submissionsTable } from "@workspace/db/schema";
 const router: IRouter = Router();
 
 router.post("/compile", async (req, res) => {
-  const { code, filename, language: langOverride, args } = req.body as {
+  const { code, filename, language: langOverride, args, stdin } = req.body as {
     code?: string;
     filename?: string;
     language?: string;
     args?: string[];
+    stdin?: string;
   };
 
   if (!code || typeof code !== "string") {
@@ -22,7 +23,7 @@ router.post("/compile", async (req, res) => {
   const detection = detectLanguage(code, filename);
   const language = langOverride || detection.detected;
 
-  const compileResult = await compileAndRun(code, language, args || []);
+  const compileResult = await compileAndRun(code, language, args || [], stdin ?? "");
 
   // Database logging bypassed for local testing (Option A)
   const inserted = { id: Date.now() };

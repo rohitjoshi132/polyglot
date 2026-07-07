@@ -55,6 +55,8 @@ export interface CompileRequest {
   filename?: string;
   /** Override language detection */
   language?: string;
+  /** Data to pipe into the program's standard input (supports multiple lines) */
+  stdin?: string;
   /** Additional arguments to pass to the compiler */
   args?: string[];
 }

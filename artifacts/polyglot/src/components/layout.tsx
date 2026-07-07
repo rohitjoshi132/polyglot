@@ -1,14 +1,14 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Terminal, History, Wrench, Menu, X, User, LogIn, FolderOpen } from "lucide-react";
+import { Terminal, Wrench, Menu, X, User, LogIn, FolderOpen, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useTheme } from "@/contexts/theme-context";
 import { AuthModal } from "./auth-modal";
 
 const navItems = [
   { href: "/", label: "Editor", icon: Terminal },
-  { href: "/history", label: "History", icon: History },
   { href: "/toolchains", label: "Toolchains", icon: Wrench },
   { href: "/profile", label: "My Projects", icon: FolderOpen },
 ];
@@ -18,6 +18,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const { user, loading } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen w-full flex bg-background">
@@ -61,6 +62,33 @@ export function Layout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Theme toggle — desktop sidebar */}
+        <div className="px-3 pt-0 pb-1">
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={isDark ? "sun" : "moon"}
+                initial={{ rotate: -30, opacity: 0, scale: 0.7 }}
+                animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                exit={{ rotate: 30, opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isDark
+                  ? <Sun className="w-[18px] h-[18px] text-amber-400" />
+                  : <Moon className="w-[18px] h-[18px]" />
+                }
+              </motion.div>
+            </AnimatePresence>
+            <span className="font-medium text-sm">
+              {isDark ? "Light Mode" : "Dark Mode"}
+            </span>
+          </button>
+        </div>
 
         {/* User Card */}
         <div className="p-3 border-t border-sidebar-border space-y-2">
@@ -109,17 +137,6 @@ export function Layout({ children }: { children: ReactNode }) {
             </button>
           )}
 
-          {/* Status */}
-          <div className="rounded-xl bg-sidebar-accent px-3 py-2.5 border border-sidebar-border">
-            <p className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-bold mb-1.5">System Status</p>
-            <div className="flex items-center text-xs text-emerald-400 font-medium">
-              <span className="relative flex h-2 w-2 mr-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              All Systems Operational
-            </div>
-          </div>
         </div>
       </aside>
 
@@ -130,6 +147,17 @@ export function Layout({ children }: { children: ReactNode }) {
           <span className="font-bold text-base text-sidebar-foreground">Polyglot</span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Theme toggle — mobile */}
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Light Mode" : "Dark Mode"}
+            className="p-2 rounded-lg bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+          >
+            {isDark
+              ? <Sun className="w-4 h-4 text-amber-400" />
+              : <Moon className="w-4 h-4" />
+            }
+          </button>
           {!loading && !user && (
             <button
               onClick={() => setAuthModalOpen(true)}

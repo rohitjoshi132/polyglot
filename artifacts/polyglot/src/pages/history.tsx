@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { useListSubmissions, useGetSubmission } from "@workspace/api-client-react";
+import { useListSubmissions, useGetSubmission, getGetSubmissionQueryKey } from "@workspace/api-client-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Search, ChevronRight, X } from "lucide-react";
@@ -13,7 +13,7 @@ export default function History() {
   
   const { data, isLoading } = useListSubmissions({ page, limit: 20 });
   const { data: detailData, isLoading: detailLoading } = useGetSubmission(selectedId || 0, {
-    query: { enabled: !!selectedId }
+    query: { enabled: !!selectedId, queryKey: getGetSubmissionQueryKey(selectedId || 0) }
   });
 
   const getConfidenceColor = (level: string) => {

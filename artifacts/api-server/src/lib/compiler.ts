@@ -34,7 +34,7 @@ function getMainClass(code: string): string {
   return match ? match[1] : "Main";
 }
 
-export async function compileAndRun(code: string, language: string, extraArgs: string[] = []): Promise<CompileResult> {
+export async function compileAndRun(code: string, language: string, extraArgs: string[] = [], stdin: string = ""): Promise<CompileResult> {
   const start = Date.now();
   const toolchain = getToolchainForLanguage(language);
 
@@ -145,6 +145,8 @@ export async function compileAndRun(code: string, language: string, extraArgs: s
         encoding: "utf-8",
         timeout: 30000,
         cwd: workDir,
+        input: stdin,          // pass user-supplied stdin; empty string closes stdin immediately so processes don't block
+        stdio: ["pipe", "pipe", "pipe"],
       });
       stdout = result || "";
       exitCode = 0;

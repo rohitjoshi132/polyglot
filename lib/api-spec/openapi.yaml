@@ -234,6 +234,9 @@ components:
         language:
           type: string
           description: Override language detection
+        stdin:
+          type: string
+          description: Data to pipe into the program's standard input (supports multiple lines)
         args:
           type: array
           items:
