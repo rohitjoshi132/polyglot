@@ -552,8 +552,8 @@ export default function Home() {
 
   const handleCompile = useCallback(() => {
     if (!code.trim()) { toast({ title: "No code", description: "Enter some code first.", variant: "destructive" }); return; }
-    // Use manual override → previously auto-detected language → empty (detectsStdin will scan all)
-    const lang = languageOverride || detectResult?.detected || "";
+    // Priority: manual override → previously detected (detect btn) → last compile result → scan all
+    const lang = languageOverride || detectResult?.detected || compileResult?.detected || "";
     const detectedPrompts = detectsStdin(code, lang);
     if (detectedPrompts.length > 0) {
       setStdinPrompts(detectedPrompts);
@@ -562,7 +562,7 @@ export default function Home() {
     } else {
       compile({ data: { code, filename: filename || undefined, language: languageOverride || undefined, stdin: undefined } });
     }
-  }, [code, filename, languageOverride, detectResult, detectsStdin, compile, toast]);
+  }, [code, filename, languageOverride, detectResult, compileResult, detectsStdin, compile, toast]);
 
   const confirmRunWithStdin = useCallback(() => {
     setStdinModalOpen(false);
