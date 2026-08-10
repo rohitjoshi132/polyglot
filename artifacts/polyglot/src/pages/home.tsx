@@ -21,6 +21,8 @@ import {
   Sigma,
   Share2,
   Link,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import { useDetectLanguage, useCompileCode } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +33,10 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { AuthModal } from "@/components/auth-modal";
 import { SaveProjectDialog } from "@/components/save-project-dialog";
+import { AiAssistantPanel } from "@/components/ai-assistant-panel";
+import { AiGenerateModal } from "@/components/ai-generate-modal";
+import { AiErrorExplainer } from "@/components/ai-error-explainer";
+
 
 const LANGUAGE_OPTIONS = [
   "Auto-detect", "Python", "JavaScript", "TypeScript", "Go", "Rust",
@@ -317,6 +323,11 @@ export default function Home() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [copiedShare, setCopiedShare] = useState(false);
+  // ── AI state ────────────────────────────────────────────────────────────
+  const [aiPanelOpen, setAiPanelOpen]       = useState(false);
+  const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
+  const [aiRunKey, setAiRunKey]             = useState(0);
+
   const stdinInputRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -421,6 +432,8 @@ export default function Home() {
   const { mutate: compile, isPending: isCompiling, data: compileResult } = useCompileCode({
     mutation: {
       onSuccess: (data) => {
+        // Bump runKey whenever we get a failed result — triggers AI error explainer
+        if (!data.success) setAiRunKey((k) => k + 1);
         toast({
           title: data.success ? "✅ Run Successful" : "❌ Run Failed",
           description: `${data.detected} · Exit ${data.exitCode} · ${data.compilationMs}ms`,
@@ -432,6 +445,7 @@ export default function Home() {
       },
     },
   });
+
 
   // Insert special char at textarea cursor position (used by palette clicks)
   const insertChar = useCallback((sym: string) => {
@@ -681,7 +695,7 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Quick sample loader */}
+        {/* Quick sample loader + AI buttons */}
         <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
           <Zap className="w-3.5 h-3.5 text-primary" />
           <span>Try a sample:</span>
@@ -694,10 +708,39 @@ export default function Home() {
               {lang}
             </button>
           ))}
+
+          {/* ── AI Generate button ── */}
+          <button
+            id="ai-generate-btn"
+            onClick={() => setAiGenerateOpen(true)}
+            title="Generate code with AI"
+            className="ml-1 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-violet-500/10 border border-violet-500/25 text-violet-400 hover:bg-violet-500/20 hover:border-violet-500/50 transition-all"
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            Generate
+          </button>
+
+          {/* ── AI Assistant toggle ── */}
+          <button
+            id="ai-assistant-btn"
+            onClick={() => setAiPanelOpen((v) => !v)}
+            title="Toggle AI assistant panel"
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all",
+              aiPanelOpen
+                ? "bg-violet-500/15 border-violet-500/40 text-violet-400"
+                : "bg-secondary/60 border-white/5 hover:border-violet-500/30 hover:text-violet-400"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            AI
+          </button>
         </div>
       </div>
 
+      {/* Main content row: editor + results + AI panel */}
       <div className="flex flex-col md:flex-row gap-5 flex-1 min-h-[540px]">
+
         {/* ── Editor Panel ── */}
         <div className="flex-1 flex flex-col glow-border rounded-2xl glass-panel overflow-hidden border border-border/60 focus-within:border-primary/40 focus-within:shadow-[0_0_30px_-8px_hsl(152_72%_47%/0.2)] transition-all duration-300">
           {/* Editor Top Bar */}
@@ -1135,9 +1178,30 @@ export default function Home() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* ── AI Error Explainer (only when compile failed) ── */}
+        {compileResult && !compileResult.success && (
+          <AiErrorExplainer
+            code={code}
+            language={compileResult.detected || languageOverride || ""}
+            stdout={compileResult.stdout}
+            stderr={compileResult.stderr}
+            exitCode={compileResult.exitCode}
+            runKey={aiRunKey}
+          />
+        )}
+
+        {/* ── AI Assistant Panel ── */}
+        <AiAssistantPanel
+          open={aiPanelOpen}
+          onClose={() => setAiPanelOpen(false)}
+          code={code}
+          language={compileResult?.detected || detectResult?.detected || languageOverride || ""}
+        />
       </div>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
       <SaveProjectDialog
         isOpen={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
@@ -1372,6 +1436,18 @@ export default function Home() {
           </>
         )}
       </AnimatePresence>
+
+      {/* ── AI Generate Modal ── */}
+      <AiGenerateModal
+        open={aiGenerateOpen}
+        onClose={() => setAiGenerateOpen(false)}
+        onUseCode={(generatedCode, lang) => {
+          setCode(generatedCode);
+          if (lang) setLanguageOverride(lang);
+        }}
+        currentLanguage={languageOverride || compileResult?.detected || detectResult?.detected}
+      />
     </div>
   );
 }
+

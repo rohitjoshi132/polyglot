@@ -6,6 +6,7 @@ import submissionsRouter from "./submissions.js";
 import toolchainsRouter from "./toolchains.js";
 import authRouter from "./auth.js";
 import projectsRouter from "./projects.js";
+import aiRouter from "./ai.js";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,7 @@ router.use(submissionsRouter);
 router.use(toolchainsRouter);
 router.use(authRouter);
 router.use(projectsRouter);
+router.use(aiRouter);
 
 export default router;
+
