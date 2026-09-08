@@ -2,7 +2,7 @@
 
 Polyglot is a sleek, modern code editor and execution environment that lives in your browser. Paste code, auto-detect the language, and run it instantly across a wide array of programming languages. It features a powerful AI assistant powered by Claude 3.7 Sonnet to help you generate, explain, debug, and optimize your code on the fly!
 
-![Polyglot Interface](./docs/interface.jpg)
+![Polyglot Interface](./docs/polyglot-app.jpg)
 
 ## Features
 
