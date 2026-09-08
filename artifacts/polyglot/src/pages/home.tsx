@@ -908,34 +908,37 @@ export default function Home() {
             {/* Action buttons */}
             <div className="flex items-center gap-2">
               <button
+                onClick={handleShare}
+                disabled={!code.trim()}
+                title="Share this code snippet"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary/80 border border-white/10 hover:border-primary/50 hover:bg-primary/20 text-foreground text-xs font-medium transition-all"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+
+              <button
                 onClick={handleSaveClick}
                 disabled={!code.trim()}
                 title={user ? "Save project (Ctrl+S)" : "Sign in to save"}
-                className="btn-secondary text-xs py-2 px-3"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary/80 border border-white/10 hover:border-primary/50 hover:bg-primary/20 text-foreground text-xs font-medium transition-all"
               >
                 <Save className="w-3.5 h-3.5" />
-                Save
+                <span className="hidden sm:inline">Save</span>
               </button>
-              <button
-                onClick={handleShare}
-                disabled={!code.trim()}
-                title="Share this code"
-                className="btn-secondary text-xs py-2 px-3"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                Share
-              </button>
+
               <button
                 onClick={handleDetect}
-                disabled={isBusy || !code.trim()}
-                title="Detect language (Ctrl+Shift+D)"
-                className="btn-secondary text-xs py-2 px-3"
+                disabled={!code.trim() || isDetecting}
+                title="Detect Language (Ctrl+Shift+D)"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary/80 border border-white/10 hover:border-primary/50 hover:bg-primary/20 text-foreground text-xs font-medium transition-all group"
               >
-                {isDetecting
-                  ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  : <SearchCode className="w-3.5 h-3.5" />
-                }
-                Detect
+                {isDetecting ? (
+                  <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <SearchCode className="w-3.5 h-3.5 group-hover:text-primary transition-colors" />
+                )}
+                <span className="hidden sm:inline">Detect</span>
               </button>
               <button
                 onClick={handleCompile}

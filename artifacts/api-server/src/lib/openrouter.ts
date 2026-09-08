@@ -12,9 +12,9 @@ import type { Response } from "express";
 
 // ── Available models exposed to the UI ─────────────────────────────────────
 export const OPENROUTER_MODELS = [
-  { id: "google/gemini-2.0-flash",             label: "Gemini 2.0 Flash",       provider: "Google"    },
-  { id: "google/gemini-2.5-flash",             label: "Gemini 2.5 Flash",       provider: "Google"    },
-  { id: "anthropic/claude-3.5-sonnet",         label: "Claude 3.5 Sonnet",      provider: "Anthropic" },
+  { id: "google/gemini-3.7-flash",             label: "Gemini 3.7 Flash",       provider: "Google"    },
+  { id: "google/gemini-3.5-flash",             label: "Gemini 3.5 Flash",       provider: "Google"    },
+  { id: "anthropic/claude-3.7-sonnet",         label: "Claude 3.7 Sonnet",      provider: "Anthropic" },
   { id: "anthropic/claude-3-haiku",            label: "Claude 3 Haiku",         provider: "Anthropic" },
   { id: "openai/gpt-4o",                       label: "GPT-4o",                 provider: "OpenAI"    },
   { id: "openai/gpt-4o-mini",                  label: "GPT-4o Mini",            provider: "OpenAI"    },
@@ -33,7 +33,7 @@ export interface ChatMessage {
 
 /** Validate that the requested model is in our allow-list. Falls back to default if not. */
 function resolveModel(requested?: string): string {
-  const env  = process.env["OPENROUTER_MODEL"] ?? "google/gemini-2.0-flash";
+  const env  = process.env["OPENROUTER_MODEL"] ?? "google/gemini-3.7-flash";
   if (!requested) return env;
   const found = OPENROUTER_MODELS.find((m) => m.id === requested);
   return found ? found.id : env;
@@ -83,6 +83,7 @@ export async function streamChat(
         messages,
         stream: true,
         temperature,
+        max_tokens: 8192,
       }),
     });
 

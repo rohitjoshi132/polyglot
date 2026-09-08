@@ -17,9 +17,9 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const MODELS = [
-  { id: "google/gemini-2.0-flash",             label: "Gemini 2.0 Flash",  provider: "Google"    },
-  { id: "google/gemini-2.5-flash",             label: "Gemini 2.5 Flash",  provider: "Google"    },
-  { id: "anthropic/claude-3.5-sonnet",         label: "Claude 3.5 Sonnet", provider: "Anthropic" },
+  { id: "google/gemini-3.7-flash",             label: "Gemini 3.7 Flash",  provider: "Google"    },
+  { id: "google/gemini-3.5-flash",             label: "Gemini 3.5 Flash",  provider: "Google"    },
+  { id: "anthropic/claude-3.7-sonnet",         label: "Claude 3.7 Sonnet", provider: "Anthropic" },
   { id: "anthropic/claude-3-haiku",            label: "Claude 3 Haiku",    provider: "Anthropic" },
   { id: "openai/gpt-4o",                       label: "GPT-4o",            provider: "OpenAI"    },
   { id: "openai/gpt-4o-mini",                  label: "GPT-4o Mini",       provider: "OpenAI"    },
@@ -84,6 +84,21 @@ export function AiGenerateModal({ open, onClose, onUseCode, currentLanguage }: A
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  // Global Ctrl+Enter to generate
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (!isStreaming && prompt.trim()) {
+          handleGenerate();
+        }
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, prompt, language, model, isStreaming]);
+
   const selectedModel = MODELS.find((m) => m.id === model) ?? MODELS[0]!;
 
   const handleGenerate = async () => {
@@ -111,6 +126,8 @@ export function AiGenerateModal({ open, onClose, onUseCode, currentLanguage }: A
 
   const handleClose = () => {
     abort();
+    setText("");
+    setPrompt("");
     onClose();
   };
 
@@ -245,7 +262,7 @@ export function AiGenerateModal({ open, onClose, onUseCode, currentLanguage }: A
                           initial={{ opacity: 0, y: -4 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -4 }}
-                          className="absolute top-full mt-1 left-0 right-0 z-50 bg-background border border-border rounded-xl shadow-lg overflow-hidden"
+                          className="absolute top-full mt-1 left-0 right-0 z-50 bg-background border border-border rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto"
                         >
                           {MODELS.map((m) => (
                             <button
@@ -311,39 +328,43 @@ export function AiGenerateModal({ open, onClose, onUseCode, currentLanguage }: A
               <div className="px-5 py-4 border-t border-border bg-secondary/30 flex justify-end gap-2.5">
                 <button
                   onClick={handleClose}
-                  className="btn-secondary text-sm py-2 px-4"
+                  className="px-4 py-2 rounded-lg bg-secondary border border-white/10 hover:bg-secondary/80 text-foreground text-sm font-medium transition-all"
                 >
                   Cancel
                 </button>
-                {generated && !isStreaming ? (
+
+                <button
+                  onClick={isStreaming ? abort : handleGenerate}
+                  disabled={!isStreaming && !prompt.trim()}
+                  className={cn(
+                    "flex items-center gap-1.5 text-sm py-2 px-4 transition-all rounded-lg font-medium",
+                    generated && !isStreaming
+                      ? "bg-secondary border border-white/10 hover:bg-secondary/80 text-foreground"
+                      : "btn-primary",
+                    isStreaming && "bg-rose-500/80 from-rose-500 to-rose-600 border-transparent text-white"
+                  )}
+                >
+                  {isStreaming ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Stop
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      {generated ? "Regenerate" : "Generate"}
+                      <span className="text-[10px] opacity-60 font-mono ml-1">Ctrl+Enter</span>
+                    </>
+                  )}
+                </button>
+
+                {generated && !isStreaming && (
                   <button
                     onClick={handleUseCode}
-                    className="btn-primary text-sm py-2 px-4"
+                    className="btn-primary text-sm py-2 px-4 flex items-center gap-1.5"
                   >
                     <Wand2 className="w-4 h-4" />
                     Use this code
-                  </button>
-                ) : (
-                  <button
-                    onClick={isStreaming ? abort : handleGenerate}
-                    disabled={!isStreaming && !prompt.trim()}
-                    className={cn(
-                      "btn-primary text-sm py-2 px-4",
-                      isStreaming && "bg-rose-500/80 from-rose-500 to-rose-600"
-                    )}
-                  >
-                    {isStreaming ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Stop
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Generate
-                        <span className="text-[10px] opacity-60 font-mono ml-1">Ctrl+Enter</span>
-                      </>
-                    )}
                   </button>
                 )}
               </div>

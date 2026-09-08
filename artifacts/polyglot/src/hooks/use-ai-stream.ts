@@ -7,9 +7,10 @@
  */
 import { useState, useRef, useCallback } from "react";
 
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined) ||
-  "https://polyglot-api-okgo.onrender.com";
+// Use a relative base so Vite's dev proxy (/api/* → localhost:3001) handles it
+// in development, and Netlify's rewrite rules handle it in production.
+// Only fall back to an absolute URL if VITE_API_URL is explicitly set.
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
 export function useAiStream() {
   const [text, setText]           = useState("");
