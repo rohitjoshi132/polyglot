@@ -23,7 +23,8 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # Copy the entire monorepo package structure
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc* ./
+COPY tsconfig.base.json tsconfig.json ./
 COPY lib/ ./lib/
 COPY artifacts/ ./artifacts/
 
