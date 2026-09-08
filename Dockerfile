@@ -1,8 +1,9 @@
 # Use a standard Debian-based Node image
-FROM node:24-bullseye-slim
+FROM node:24-bookworm-slim
 
 # Install the native compilers for the polyglot platform
-RUN apt-get update && apt-get install -y \
+RUN mkdir -p /usr/share/man/man1 && \
+    apt-get update && apt-get install -y \
     python3 \
     gcc \
     g++ \
