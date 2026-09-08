@@ -28,6 +28,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc* ./
 COPY tsconfig.base.json tsconfig.json ./
 COPY lib/ ./lib/
 COPY artifacts/ ./artifacts/
+COPY scripts/ ./scripts/
 
 # Install workspace dependencies
 RUN pnpm install --frozen-lockfile || pnpm install
